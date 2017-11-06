@@ -1,0 +1,25 @@
+FROM ubuntu:16.04 as ngic-builder
+
+RUN apt-get update && apt-get -y install build-essential wget \
+    libboost-all-dev cmake ragel \
+    libzmq3-dev libcurl4-openssl-dev  \
+    libpcap0.8-dev libjson0-dev
+
+ARG HSCAN_VER=4.1.0
+ENV HYPERSCANDIR /opt/hyperscan-${HSCAN_VER}
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:${HYPERSCANDIR}/build/lib
+
+RUN cd /opt && wget https://github.com/01org/hyperscan/archive/v${HSCAN_VER}.tar.gz && \
+    tar -xvzf v${HSCAN_VER}.tar.gz && cd ${HYPERSCANDIR} && \
+    mkdir build && cd build && \
+    cmake -DCMAKE_CXX_COMPILER=c++ .. && make -j4
+
+ENV RTE_SDK /opt/dpdk
+ENV RTE_TARGET x86_64-native-linuxapp-gcc
+
+COPY dpdk ${RTE_SDK}
+COPY dpdk-16.04_common_linuxapp ${RTE_SDK}/config/common_linuxapp
+WORKDIR ${RTE_SDK}
+RUN sed -ri 's,(IGB_UIO=).*,\1n,' config/common_linuxapp && \
+    sed -ri 's,(KNI_KMOD=).*,\1n,' config/common_linuxapp && \
+    make -j4 install T=${RTE_TARGET}
