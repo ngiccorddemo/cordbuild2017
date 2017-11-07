@@ -12,7 +12,14 @@ docker pull ngiccorddemo/ngic-dp
 docker pull ngiccorddemo/ngic-traffic
 ```
 
-Alternatively, if you wish to build the Docker images yourself, see the [readme](dockerfiles/README.md) inside the dockerfiles folder.
+(Alternatively, if you wish to build the Docker images yourself, see the [readme](dockerfiles/README.md) inside the dockerfiles folder.)
+
+
+After Docker is setup, clone the source code in this repo:
+
+`git clone https://github.com/ngiccorddemo/cordbuild2017.git`
+
+Then open 3 terminals and change directory to the demo folder.
 
 
 Starting the Data Plane
