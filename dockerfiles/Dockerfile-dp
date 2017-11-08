@@ -4,7 +4,7 @@ ENV NG_CORE /opt/ng-core
 COPY . ${NG_CORE}
 WORKDIR ${NG_CORE}
 
-RUN make clean && make -j4 build-lib && make -j4 build-dp
+RUN make clean && make -j4 build-lib && make -j4 build-dp EXTRA_CFLAGS="-DSTATS -DOSTATS"
 
 FROM ubuntu:16.04
 RUN apt-get update && apt-get -y install \
@@ -20,4 +20,7 @@ EXPOSE 20/UDP
 VOLUME /opt/ngic/config
 
 WORKDIR /opt/ngic/bin
-CMD . /opt/ngic/config/dp_config.cfg && ip link set dev $( netstat -ie | grep -B1 $S1U_IP | head -n1 | awk '{print $1}' | tr --d : ) address $S1U_MAC   && ip link set dev $( netstat -ie | grep -B1 $SGI_IP | head -n1 | awk '{print $1}' | tr --d : ) address $SGI_MAC  && ./ngic_dataplane $EAL_ARGS -- $APP_ARGS
+CMD . /opt/ngic/config/dp_config.cfg && \
+	ip link set dev $S1U_IFACE address $S1U_MAC && \
+	ip link set dev $SGI_IFACE address $SGI_MAC && \
+	./ngic_dataplane $EAL_ARGS -- $APP_ARGS

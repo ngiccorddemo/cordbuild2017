@@ -1,0 +1,264 @@
+commit a32ed9fcdcd409b5dc1c64f9f0a95d4a02d3c0e9
+Date:   Wed Nov 1 10:28:12 2017 -0700
+
+    applying arp patch for demo
+
+diff --git a/dp/pipeline/epc_arp_icmp.c b/dp/pipeline/epc_arp_icmp.c
+index 7ead59e..4566191 100644
+--- a/dp/pipeline/epc_arp_icmp.c
++++ b/dp/pipeline/epc_arp_icmp.c
+@@ -39,6 +39,7 @@
+ #include <rte_mbuf.h>
+ #include <rte_ring.h>
+ #include <rte_errno.h>
++#include <rte_cfgfile.h>
+ 
+ #include "epc_arp_icmp.h"
+ #include "epc_packet_framework.h"
+@@ -46,6 +47,7 @@
+ #include "cdr.h"
+ #include "main.h"
+ 
++#define STATIC_ARP_FILE "../config/static_arp.cfg"
+ 
+ #if (RTE_BYTE_ORDER == RTE_LITTLE_ENDIAN)
+ /* x86 == little endian
+@@ -967,6 +969,176 @@ static int port_in_ah_arp_icmp_key(struct rte_pipeline *p, struct rte_mbuf **pkt
+ 	return 0;
+ }
+ 
++static int
++parse_ether_addr(struct ether_addr *hw_addr, const char *str)
++{
++	int ret = sscanf(str, "%"SCNx8":"
++			"%"SCNx8":"
++			"%"SCNx8":"
++			"%"SCNx8":"
++			"%"SCNx8":"
++			"%"SCNx8,
++			&hw_addr->addr_bytes[0],
++			&hw_addr->addr_bytes[1],
++			&hw_addr->addr_bytes[2],
++			&hw_addr->addr_bytes[3],
++			&hw_addr->addr_bytes[4],
++			&hw_addr->addr_bytes[5]);
++	return  ret - RTE_DIM(hw_addr->addr_bytes);
++}
++
++static void
++add_static_arp_entry(struct rte_cfgfile_entry *entry, uint8_t port_id)
++{
++	struct pipeline_arp_icmp_arp_key_ipv4 key = {.port_id = port_id};
++	struct arp_entry_data *data;
++	char *low_ptr;
++	char *high_ptr;
++	char *saveptr;
++	struct in_addr low_addr;
++	struct in_addr high_addr;
++	uint32_t low_ip;
++	uint32_t high_ip;
++	uint32_t cur_ip;
++	struct ether_addr hw_addr;
++	int ret;
++
++	low_ptr = strtok_r(entry->name, " \t", &saveptr);
++	high_ptr = strtok_r(NULL, " \t", &saveptr);
++
++	if (low_ptr == NULL) {
++		printf("Error parsing static arp entry: %s = %s\n",
++				entry->name, entry->value);
++		return;
++	}
++
++	ret = inet_aton(low_ptr, &low_addr);
++	if (ret == 0) {
++		printf("Error parsing static arp entry: %s = %s\n",
++				entry->name, entry->value);
++		return;
++	}
++
++	if (high_ptr) {
++		ret = inet_aton(high_ptr, &high_addr);
++		if (ret == 0) {
++			printf("Error parsing static arp entry: %s = %s\n",
++					entry->name, entry->value);
++			return;
++		}
++	} else {
++		high_addr = low_addr;
++	}
++
++	low_ip = ntohl(low_addr.s_addr);
++	high_ip = ntohl(high_addr.s_addr);
++
++	if (high_ip < low_ip) {
++		printf("Error parsing static arp entry"
++				" - range must be low to high: %s = %s\n",
++				entry->name, entry->value);
++		return;
++	}
++
++	if (parse_ether_addr(&hw_addr, entry->value)) {
++		printf("Error parsing static arp entry mac addr"
++				"%s = %s\n",
++				entry->name, entry->value);
++		return;
++	}
++
++	for (cur_ip = low_ip; cur_ip <= high_ip; ++cur_ip) {
++
++		key.ip = ntohl(cur_ip);
++
++		data = rte_malloc_socket(NULL,
++				sizeof(struct arp_entry_data),
++				RTE_CACHE_LINE_SIZE, rte_socket_id());
++		if (data == NULL) {
++			printf("Error allocating arp entry - "
++					"%s = %s\n",
++					entry->name, entry->value);
++			return;
++		}
++
++		data->eth_addr = hw_addr;
++		data->port = port_id;
++		data->status = COMPLETE;
++		data->ip = key.ip;
++		data->last_update = time(NULL);
++		data->queue = NULL;
++		rte_rwlock_init(&data->queue_lock);
++
++		add_arp_data(&key, data);
++	}
++}
++
++static void
++config_static_arp(void)
++{
++	struct rte_cfgfile *file = rte_cfgfile_load(STATIC_ARP_FILE, 0);
++	struct rte_cfgfile_entry *sgi_entries = NULL;
++	struct rte_cfgfile_entry *s1u_entries = NULL;
++	int num_sgi_entries;
++	int num_s1u_entries;
++	int i;
++
++	if (file == NULL) {
++		printf("Cannot load configuration file %s\n",
++				STATIC_ARP_FILE);
++		return;
++	}
++
++	printf("Parsing %s\n", STATIC_ARP_FILE);
++
++	num_sgi_entries = rte_cfgfile_section_num_entries(file, "sgi");
++	if (num_sgi_entries > 0) {
++		sgi_entries = rte_malloc_socket(NULL,
++				sizeof(struct rte_cfgfile_entry) *
++				num_sgi_entries,
++				RTE_CACHE_LINE_SIZE, rte_socket_id());
++	}
++	if (sgi_entries == NULL) {
++		fprintf(stderr, "Error configuring sgi entry of %s\n",
++				STATIC_ARP_FILE);
++	} else {
++		rte_cfgfile_section_entries(file, "sgi", sgi_entries,
++				num_sgi_entries);
++
++		for (i = 0; i < num_sgi_entries; ++i) {
++			printf("[SGI]: %s = %s\n", sgi_entries[i].name,
++					sgi_entries[i].value);
++			add_static_arp_entry(&sgi_entries[i], SGI_PORT_ID);
++		}
++		rte_free(sgi_entries);
++	}
++
++	num_s1u_entries = rte_cfgfile_section_num_entries(file, "s1u");
++	if (num_s1u_entries > 0) {
++		s1u_entries = rte_malloc_socket(NULL,
++				sizeof(struct rte_cfgfile_entry) *
++				num_s1u_entries,
++				RTE_CACHE_LINE_SIZE, rte_socket_id());
++	}
++	if (s1u_entries == NULL) {
++		fprintf(stderr, "Error configuring s1u entry of %s\n",
++				STATIC_ARP_FILE);
++	} else {
++		rte_cfgfile_section_entries(file, "s1u", s1u_entries,
++				num_s1u_entries);
++		for (i = 0; i < num_sgi_entries; ++i) {
++			printf("[S1u]: %s = %s\n", s1u_entries[i].name,
++					s1u_entries[i].value);
++			add_static_arp_entry(&s1u_entries[i], S1U_PORT_ID);
++		}
++		rte_free(s1u_entries);
++	}
++
++	if (ARPICMP_DEBUG)
++		print_arp_table();
++}
++
++
+ void
+ epc_arp_icmp_init(void)
+ {
+@@ -1091,13 +1263,25 @@ epc_arp_icmp_init(void)
+ 	}
+ 
+ 	/* create the arp_icmp mbuf rx pool */
+-	arp_icmp_pktmbuf_tx_pool = rte_pktmbuf_pool_create("arp_icmp_mbuf_tx_pool", NB_ARPICMP_MBUF, 32,
++	arp_icmp_pktmbuf_tx_pool = rte_pktmbuf_pool_create(
++			"arp_icmp_mbuf_tx_pool", NB_ARPICMP_MBUF, 32,
+ 			0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
+ 
+-	arp_queued_pktmbuf_tx_pool = rte_pktmbuf_pool_create("arp_queued_pktmbuf_tx_pool", NB_ARPICMP_MBUF, 32,
++	if (arp_icmp_pktmbuf_tx_pool == NULL) {
++		rte_panic("rte_pktmbuf_pool_create failed for "
++				"arp_icmp_mbuf_tx_pool: %s\n",
++				rte_strerror(abs(errno)));
++		return;
++	}
++
++	arp_queued_pktmbuf_tx_pool = rte_pktmbuf_pool_create(
++			"arp_queued_tx_pool", NB_ARPICMP_MBUF, 32,
+ 			0, RTE_MBUF_DEFAULT_BUF_SIZE, rte_socket_id());
+ 
+-	if (arp_icmp_pktmbuf_tx_pool == NULL) {
++	if (arp_queued_pktmbuf_tx_pool == NULL) {
++		rte_panic("rte_pktmbuf_pool_create failed for "
++				"arp_queued_pktmbuf_tx_pool: %s\n",
++				rte_strerror(abs(errno)));
+ 		return;
+ 	}
+ 
+@@ -1114,6 +1298,8 @@ epc_arp_icmp_init(void)
+ 				rte_errno);
+ 
+ 	rte_rwlock_init(&arp_hash_handle_lock);
++
++	config_static_arp();
+ }
+ 
+ void epc_arp_icmp(__rte_unused void *arg)
+diff --git a/dp/pipeline/epc_spns_dns.c b/dp/pipeline/epc_spns_dns.c
+index bf34243..b33e290 100644
+--- a/dp/pipeline/epc_spns_dns.c
++++ b/dp/pipeline/epc_spns_dns.c
+@@ -1,3 +1,19 @@
++/*
++ * Copyright (c) 2017 Intel Corporation
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *      http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ */
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <unistd.h>

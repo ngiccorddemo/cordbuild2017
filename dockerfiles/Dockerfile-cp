@@ -21,4 +21,4 @@ EXPOSE 2123/UDP
 VOLUME /opt/ngic/config
 
 WORKDIR /opt/ngic/bin
-CMD . /opt/ngic/config/cp_config.cfg && ip link set dev $( netstat -ie | grep -B1 $S11_SGW_IP | head -n1 | awk '{print $1}' | tr --d : ) address $S11_SGW_MAC  && ./ngic_controlplane $EAL_ARGS -- $APP_ARGS
+CMD . /opt/ngic/config/cp_config.cfg && ip link set dev $S11_SGW_IFACE address $S11_SGW_MAC && ./ngic_controlplane $EAL_ARGS -- $APP_ARGS
