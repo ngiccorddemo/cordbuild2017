@@ -1,7 +1,7 @@
 version: '3.2'
 services:
   cp:
-    image: ngiccorddemo/ngic-cp
+    image: ngiccorddemo/ngic-cp:$tag
     cap_add:
     - NET_ADMIN    
     volumes:
@@ -13,7 +13,7 @@ services:
         ipv4_address: 172.26.0.2 
 
   dp:
-    image: ngiccorddemo/ngic-dp
+    image: ngiccorddemo/ngic-dp:$tag
     cap_add:
     - NET_ADMIN
     - IPC_LOCK
