@@ -23,9 +23,9 @@ sed -i 's/latest/vbox/g' .env
 Pull the images
 ===============
 
-Docker Compose will automatically pull the docker images, or you can pre-pull them (takes ~2min), using:
+Use Docker-Compose to pull the images:
 
-`docker-compose pull --parallel cp dp traffic`
+`docker-compose pull cp dp traffic`
 
 (Alternatively, if you wish to build the Docker images yourself, see the [readme](dockerfiles/README.md) inside the dockerfiles folder.)
 
