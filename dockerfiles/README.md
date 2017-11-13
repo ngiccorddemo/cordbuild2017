@@ -1,18 +1,19 @@
-Steps to build from source (rather than using pre-built docker images)-
+Steps to build from source (rather than using pre-built docker images):
 
-Starting in `cordbuild2017` dir, first clone the code from the public repo:
+Starting in the `cordbuild2017` directory, first clone the code from the public repo. The following command will check out the NGIC code at a specific commit and also pull the required DPDK submodule:
 
-`git clone --recursive https://gerrit.opencord.org/ngic && cd ngic`
+`git submodule update --init --recursive`
 
-Then, check out this specific commit for this demo:
+Change into the `ngic` directory:
 
-`git checkout a9e05`
+`cd ngic`
 
 Copy the Dockerfiles from demo repo to current (ngic) dir:
 
 `cp ../dockerfiles/Docker* .`
 
 For this demo, we are using replayed traffic, so we must apply a patch to enable static ARP tables.
+**Note: If you are planning to run this with a traffic generator you supply, skip this step.**
 
 `git apply ../dockerfiles/static_arp.patch`
 
@@ -28,4 +29,3 @@ docker-compose build
 ```
 
 Once all of the images have built, go back and follow the instructions on the main readme starting at [Starting the Data Plane](https://github.com/ngiccorddemo/cordbuild2017#starting-the-data-plane)
-
