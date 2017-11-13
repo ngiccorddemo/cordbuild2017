@@ -4,9 +4,6 @@ services:
     build:
       context: ngic
       dockerfile: Dockerfile-builder
-      args:
-      - http_proxy=$http_proxy
-      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-builder:$tag
 
   cp:
@@ -15,8 +12,6 @@ services:
       dockerfile: Dockerfile-cp
       args:
       - tag=$tag
-      - http_proxy=$http_proxy
-      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-cp:$tag
     cap_add:
     - NET_ADMIN    
@@ -34,8 +29,6 @@ services:
       dockerfile: Dockerfile-dp
       args:
       - tag=$tag
-      - http_proxy=$http_proxy
-      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-dp:$tag
     cap_add:
     - NET_ADMIN
@@ -54,9 +47,6 @@ services:
     build:
       context: dockerfiles
       dockerfile: Dockerfile-traffic
-      args:
-      - http_proxy=$http_proxy
-      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-traffic
     cap_add:
     - NET_ADMIN
