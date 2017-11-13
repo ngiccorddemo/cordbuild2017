@@ -1,4 +1,5 @@
-FROM ngiccorddemo/ngic-builder as cp-builder
+ARG tag=latest
+FROM ngiccorddemo/ngic-builder:${tag} as cp-builder
 
 ENV NG_CORE /opt/ng-core
 COPY . ${NG_CORE}
@@ -17,8 +18,12 @@ COPY --from=cp-builder /opt/ng-core/cp/build/ngic_controlplane /opt/ngic/bin/ngi
 # 2123 GTP-Control
 EXPOSE 2123/UDP
 
-#Mount the config folder here at runtime
+# Mount the config folder here at runtime
 VOLUME /opt/ngic/config
 
 WORKDIR /opt/ngic/bin
-CMD . /opt/ngic/config/cp_config.cfg && ip link set dev $S11_SGW_IFACE address $S11_SGW_MAC && ./ngic_controlplane $EAL_ARGS -- $APP_ARGS
+
+# Step setting MAC addr is only required the demo
+CMD . /opt/ngic/config/cp_config.cfg && \
+    ip link set dev $S11_SGW_IFACE address $S11_SGW_MAC && \
+    ./ngic_controlplane $EAL_ARGS -- $APP_ARGS

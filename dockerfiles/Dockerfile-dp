@@ -1,10 +1,12 @@
-FROM ngiccorddemo/ngic-builder as dp-builder
+ARG tag=latest
+FROM ngiccorddemo/ngic-builder:${tag} as dp-builder
 
 ENV NG_CORE /opt/ng-core
 COPY . ${NG_CORE}
 WORKDIR ${NG_CORE}
 
-RUN make clean && make -j4 build-lib && make -j4 build-dp EXTRA_CFLAGS="-DSTATS -DOSTATS"
+RUN make clean && make -j4 build-lib && \
+    make -j4 build-dp EXTRA_CFLAGS="-DSTATS -DOSTATS"
 
 FROM ubuntu:16.04
 RUN apt-get update && apt-get -y install \
@@ -16,10 +18,12 @@ COPY --from=dp-builder /opt/ng-core/dp/build/ngic_dataplane /opt/ngic/bin/ngic_d
 # 20 CP/DP Comm
 EXPOSE 20/UDP
 
-#Mount the config folder here at runtime
+# Mount the config folder here at runtime
 VOLUME /opt/ngic/config
 
 WORKDIR /opt/ngic/bin
+
+# Step setting MAC addr is only required the demo
 CMD . /opt/ngic/config/dp_config.cfg && \
 	ip link set dev $S1U_IFACE address $S1U_MAC && \
 	ip link set dev $SGI_IFACE address $SGI_MAC && \

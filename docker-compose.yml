@@ -1,6 +1,22 @@
 version: '3.2'
 services:
+  builder:
+    build:
+      context: ngic
+      dockerfile: Dockerfile-builder
+      args:
+      - http_proxy=$http_proxy
+      - https_proxy=$https_proxy
+    image: ngiccorddemo/ngic-builder:$tag
+
   cp:
+    build:
+      context: ngic
+      dockerfile: Dockerfile-cp
+      args:
+      - tag=$tag
+      - http_proxy=$http_proxy
+      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-cp:$tag
     cap_add:
     - NET_ADMIN    
@@ -13,6 +29,13 @@ services:
         ipv4_address: 172.26.0.2 
 
   dp:
+    build:
+      context: ngic
+      dockerfile: Dockerfile-dp
+      args:
+      - tag=$tag
+      - http_proxy=$http_proxy
+      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-dp:$tag
     cap_add:
     - NET_ADMIN
@@ -28,6 +51,12 @@ services:
         ipv4_address: 172.26.0.3
 
   traffic:
+    build:
+      context: dockerfiles
+      dockerfile: Dockerfile-traffic
+      args:
+      - http_proxy=$http_proxy
+      - https_proxy=$https_proxy
     image: ngiccorddemo/ngic-traffic
     cap_add:
     - NET_ADMIN
