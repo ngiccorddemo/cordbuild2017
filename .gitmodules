@@ -1,3 +1,4 @@
 [submodule "ngic"]
 	path = ngic
 	url = https://gerrit.opencord.org/ngic
+	ignore = dirty
