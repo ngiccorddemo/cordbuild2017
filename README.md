@@ -13,9 +13,11 @@ Then open 2 additional terminals and change directory to the demo folder in all 
 
 `cd cordbuild2017`
 
-NOTE: If you are running this demo in virtualbox directly or indirectly:
+__NOTE:__ Do this only if you are running this demo in __virtualbox__ directly or indirectly:
 
-`sed -i 's/latest/vbox/g' .env`
+```shell
+sed -i 's/latest/vbox/g' .env
+```
 
 
 Pull the images
