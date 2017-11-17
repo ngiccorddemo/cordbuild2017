@@ -3,7 +3,7 @@ Prerequisites
 
 This demo requires a Linux box with at least 4GB of free RAM.
 
-Install [docker](https://docs.docker.com/engine/installation/) (at least version 1.13 to run only, 17.06-ce to build images locally) and [docker-compose](https://docs.docker.com/compose/install/).
+Install [docker](https://docs.docker.com/engine/installation/) (at least version 1.13 to run only, 17.06-ce to build images locally) and [docker-compose](https://github.com/docker/compose/releases).
 
 After Docker is setup, clone the source code in this repo:
 
