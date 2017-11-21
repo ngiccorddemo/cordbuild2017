@@ -6,6 +6,4 @@ RUN apt-get update && apt-get -y install \
 VOLUME /opt/ngic/pcap
 WORKDIR /opt/ngic/pcap
 
-CMD ip link set dev $( netstat -ie | grep -B1 $S1U_IP | head -n1 | awk '{print $1}' | tr --d : ) address $S1U_MAC && \
-    ip link set dev $( netstat -ie | grep -B1 $SGI_IP | head -n1 | awk '{print $1}' | tr --d : ) address $SGI_MAC && \
-    /bin/bash
+CMD /bin/bash
