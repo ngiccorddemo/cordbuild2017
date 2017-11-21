@@ -24,7 +24,5 @@ VOLUME /opt/ngic/config
 WORKDIR /opt/ngic/bin
 
 # Step setting MAC addr is only required the demo
-CMD . /opt/ngic/config/dp_config.cfg && \
-	ip link set dev $S1U_IFACE address $S1U_MAC && \
-	ip link set dev $SGI_IFACE address $SGI_MAC && \
-	./ngic_dataplane $EAL_ARGS -- $APP_ARGS
+CMD . /opt/ngic/config/dp_config.cfg && ifconfig -a && \
+    ./ngic_dataplane $EAL_ARGS -- $APP_ARGS

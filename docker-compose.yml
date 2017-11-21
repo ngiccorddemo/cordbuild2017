@@ -13,15 +13,11 @@ services:
       args:
       - tag=$tag
     image: ngiccorddemo/ngic-cp:$tag
-    cap_add:
-    - NET_ADMIN    
     volumes:
     - ./config:/opt/ngic/config
     networks:
-      s11_net:
-        ipv4_address: 10.1.10.41
-      cpdp_net:
-        ipv4_address: 172.26.0.2 
+    - s11_net
+    - cpdp_net
 
   dp:
     build:
@@ -36,12 +32,9 @@ services:
     volumes:
     - ./config:/opt/ngic/config
     networks:
-      s1u_net:
-        ipv4_address: 11.1.1.100
-      sgi_net:
-        ipv4_address: 13.1.1.93
-      cpdp_net:
-        ipv4_address: 172.26.0.3
+    - s1u_net
+    - sgi_net
+    - cpdp_net
 
   traffic:
     build:
@@ -52,18 +45,10 @@ services:
     - NET_ADMIN
     volumes:
     - ./pcap:/opt/ngic/pcap
-    environment:
-    - S1U_MAC=68:05:CA:30:E5:B8
-    - S1U_IP=11.1.1.101
-    - SGI_MAC=68:05:CA:30:E5:B9
-    - SGI_IP=13.1.1.94
     networks:
-      s11_net:
-        ipv4_address: 10.1.10.11
-      s1u_net:
-        ipv4_address: 11.1.1.101
-      sgi_net:
-        ipv4_address: 13.1.1.94
+    - s11_net
+    - s1u_net
+    - sgi_net
     stdin_open: true
     tty: true
 
@@ -75,7 +60,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 10.1.10.0/24
+        - subnet: 1.1.1.0/24
   s1u_net:
     driver: bridge
     driver_opts:
@@ -83,7 +68,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 11.1.1.0/24
+        - subnet: 2.2.2.0/24
   sgi_net:
     driver: bridge
     driver_opts:
@@ -91,7 +76,7 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 13.1.1.0/24                
+        - subnet: 3.3.3.0/24
   cpdp_net:
     driver: bridge
     driver_opts:
@@ -99,4 +84,4 @@ networks:
     ipam:
       driver: default
       config:
-        - subnet: 172.26.0.0/24
+        - subnet: 4.4.4.0/24
