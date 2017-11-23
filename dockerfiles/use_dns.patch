@@ -1,0 +1,124 @@
+diff --git a/config/ng-core_cfg.mk b/config/ng-core_cfg.mk
+index 28acaf6..149b3ef 100644
+--- a/config/ng-core_cfg.mk
++++ b/config/ng-core_cfg.mk
+@@ -1,3 +1,3 @@
+ #SDN_ODL_BUILD flag is set for ODL builds, unset for direct UDP communication
+-CFLAGS += -DSDN_ODL_BUILD
++#CFLAGS += -DSDN_ODL_BUILD
+ 
+diff --git a/interface/interface.c b/interface/interface.c
+index 96a612e..cd5c8b9 100644
+--- a/interface/interface.c
++++ b/interface/interface.c
+@@ -18,6 +18,9 @@
+ #include <arpa/inet.h>
+ #include <sys/ipc.h>
+ #include <sys/msg.h>
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netdb.h>
+ #include <stdio.h>
+ #include <time.h>
+ #include <string.h>
+@@ -379,14 +382,28 @@ zmq_destroy(void)
+ #endif /* !CP_BUILD*/
+ 
+ #define IFACE_FILE "../config/interface.cfg"
+-#define SET_CONFIG_IP(ip, file, section, entry) \
+-	do {\
+-		entry = rte_cfgfile_get_entry(file, section, #ip);\
+-		if (entry == NULL)\
+-			rte_panic("%s not found in %s", #ip, IFACE_FILE);\
+-		if (inet_aton(entry, &ip) == 0)\
+-			rte_panic("Invalid %s in %s", #ip, IFACE_FILE);\
+-	} while (0)
++#define VARNAME(var) #var
++#define RTE_LOGTYPE_INTERFACE        RTE_LOGTYPE_USER1
++static void
++set_config_ip(struct in_addr *ip, const char *string, struct rte_cfgfile *file, const char *section)
++{
++    const char *entry = rte_cfgfile_get_entry(file, section, string);
++    if (entry == NULL)
++	rte_panic("%s not found in %s", string, IFACE_FILE);
++
++    int ret;
++    struct addrinfo hints, *servinfo;
++    memset(&hints, 0, sizeof hints);
++    hints.ai_family = AF_INET;
++    while ((ret = getaddrinfo(entry, NULL, &hints, &servinfo)) != 0) {
++	int sec = 5;
++	RTE_LOG(NOTICE, INTERFACE, "Unable to resolve %s. Retrying in %d sec\n", entry, sec);
++	sleep(sec);
++    }
++    struct sockaddr_in *h = (struct sockaddr_in *) servinfo->ai_addr;
++    memcpy(ip, &h->sin_addr, sizeof(struct in_addr));
++    freeaddrinfo(servinfo);
++}
+ #define SET_CONFIG_PORT(port, file, section, entry) \
+ 	do {\
+ 		entry = rte_cfgfile_get_entry(file, section, #port);\
+@@ -405,10 +422,10 @@ static void read_interface_config(void)
+ 		rte_exit(EXIT_FAILURE, "Cannot load configuration profile %s\n",
+ 				IFACE_FILE);
+ 
+-	SET_CONFIG_IP(dp_comm_ip, file, "0", file_entry);
++    set_config_ip(&dp_comm_ip, VARNAME(dp_comm_ip), file, "0");
+ 	SET_CONFIG_PORT(dp_comm_port, file, "0", file_entry);
+ 
+-	SET_CONFIG_IP(cp_comm_ip, file, "0", file_entry);
++    set_config_ip(&cp_comm_ip, VARNAME(cp_comm_ip), file, "0");
+ 	SET_CONFIG_PORT(cp_comm_port, file, "0", file_entry);
+ 
+ #ifdef SDN_ODL_BUILD
+@@ -418,21 +435,21 @@ static void read_interface_config(void)
+ 	uint16_t zmq_sub_port;
+ 	uint16_t zmq_pub_port;
+ 
+-	SET_CONFIG_IP(fpc_ip, file, "0", file_entry);
++    set_config_ip(&fpc_ip, VARNAME(fpc_ip), file, "0");
+ 	SET_CONFIG_PORT(fpc_port, file, "0", file_entry);
+ 
+-	SET_CONFIG_IP(cp_nb_server_ip, file, "0", file_entry);
++    set_config_ip(&cp_nb_server_ip, VARNAME(cp_nb_server_ip), file, "0");
+ 	SET_CONFIG_PORT(cp_nb_server_port, file, "0", file_entry);
+ 
+-	SET_CONFIG_IP(zmq_sub_ip, file, "0", file_entry);
++    set_config_ip(&zmq_sub_ip, VARNAME(zmq_sub_ip), file, "0");
+ 	SET_CONFIG_PORT(zmq_sub_port, file, "0", file_entry);
+ 
+-	SET_CONFIG_IP(zmq_pub_ip, file, "0", file_entry);
++    set_config_ip(&zmq_pub_ip, VARNAME(zmq_pub_ip), file, "0");
+ 	SET_CONFIG_PORT(zmq_pub_port, file, "0", file_entry);
+ 
+-	snprintf(zmq_sub_ifconnect, sizeof(zmq_sub_ifconnect),
++    snprintf(&zmq_sub_ifconnect, sizeof(zmq_sub_ifconnect),
+ 		"%s://%s:%u", zmq_proto, inet_ntoa(zmq_sub_ip), zmq_sub_port);
+-	snprintf(zmq_pub_ifconnect, sizeof(zmq_pub_ifconnect),
++    snprintf(&zmq_pub_ifconnect, sizeof(zmq_pub_ifconnect),
+ 		"%s://%s:%u", zmq_proto, inet_ntoa(zmq_pub_ip), zmq_pub_port);
+ #endif
+ }
+@@ -449,7 +466,10 @@ void iface_module_constructor(void)
+ 	 * dp*/
+ 	read_interface_config();
+ #ifdef CP_BUILD
+-	printf("IFACE: CP Initialization\n");
++    int sec = 10;
++    RTE_LOG(NOTICE, INTERFACE, "IFACE: CP Initialization\n");
++    RTE_LOG(NOTICE, INTERFACE, "IFACE: Wait %d sec for DP to be ready\n", sec);
++    sleep(sec);
+ #if defined SDN_ODL_BUILD
+ 	register_comm_msg_cb(COMM_SOCKET,
+ 				sdnODL_init,
+@@ -465,8 +485,8 @@ void iface_module_constructor(void)
+ 				NULL);
+ 	set_comm_type(COMM_SOCKET);
+ #endif		/* SDN_ODL_BUILD  */
+-#else		/* CP_BUILD */
+-	RTE_LOG(NOTICE, DP, "IFACE: DP Initialization\n");
++#else  /* CP_BUILD */
++    RTE_LOG(NOTICE, INTERFACE, "IFACE: DP Initialization\n");
+ 	register_comm_msg_cb(COMM_SOCKET,
+ 				udp_init_dp_socket,
+ 				udp_send_socket,
