@@ -12,8 +12,8 @@ For this demo, we are using replayed traffic, so we must apply a patch to enable
 **Note: If you are planning to run this with a traffic generator you supply, skip this step.**
 
 ```shell
-cp dockerfiles/static_arp.patch ngic/
-git -C ngic apply static_arp.patch
+cp dockerfiles/use_dns.patch ngic/
+git -C ngic apply use_dns.patch
 ```
 
 Also for this demo, we are disabling the SDN Controller support.
