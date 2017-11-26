@@ -16,8 +16,12 @@ services:
     volumes:
     - ./config:/opt/ngic/config
     networks:
-    - s11_net
-    - cpdp_net
+      s11_net:
+        aliases:
+        - spgw.s11.ngic
+      cpdp_net:
+        aliases:
+        - cp.cpdp.ngic
 
   dp:
     build:
@@ -32,9 +36,15 @@ services:
     volumes:
     - ./config:/opt/ngic/config
     networks:
-    - s1u_net
-    - sgi_net
-    - cpdp_net
+      s1u_net:
+        aliases:
+        - spgw.s1u.ngic
+      sgi_net:
+        aliases:
+        - spgw.sgi.ngic
+      cpdp_net:
+        aliases:
+        - dp.cpdp.ngic
 
   traffic:
     build:
@@ -46,9 +56,15 @@ services:
     volumes:
     - ./pcap:/opt/ngic/pcap
     networks:
-    - s11_net
-    - s1u_net
-    - sgi_net
+      s11_net:
+        aliases:
+        - mme.s11.ngic
+      s1u_net:
+        aliases:
+        - enb.s1u.ngic
+      sgi_net:
+        aliases:
+        - app.sgi.ngic
     stdin_open: true
     tty: true
 

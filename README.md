@@ -66,9 +66,9 @@ It's time to start the traffic.
 First, get the interface names by running the following commands:
 
 ```shell 
-S11_IFACE=$( netstat -ie | grep -B1 10.1.10 | head -n1 | awk '{print $1}' | tr --d : )
-S1U_IFACE=$( netstat -ie | grep -B1 11.1.1  | head -n1 | awk '{print $1}' | tr --d : )
-SGI_IFACE=$( netstat -ie | grep -B1 13.1.1  | head -n1 | awk '{print $1}' | tr --d : )
+S11_IFACE=$(ip route get $(dig +short spgw.s11.ngic) | head -1 | awk '{print $3}')
+S1U_IFACE=$(ip route get $(dig +short spgw.s1u.ngic) | head -1 | awk '{print $3}')
+SGI_IFACE=$(ip route get $(dig +short spgw.sgi.ngic) | head -1 | awk '{print $3}')
 ```
 
 Play the S11 (control plane) traffic to set up the flows
