@@ -1,3 +1,39 @@
+diff --git a/cp/main.c b/cp/main.c
+index 5f2539c..fc98a98 100644
+--- a/cp/main.c
++++ b/cp/main.c
+@@ -26,6 +26,9 @@
+ #include <ctype.h>
+ #include <pcap.h>
+ #include <signal.h>
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netdb.h>
+ 
+ #include <rte_memory.h>
+ #include <rte_memzone.h>
+@@ -88,8 +91,19 @@ struct cp_params cp_params;
+ static void
+ parse_arg_ip(const char *optarg, struct in_addr *addr)
+ {
+-	if (!inet_aton(optarg, addr))
+-		rte_panic("Invalid argument - %s - Exiting.\n", optarg);
++        int ret;
++        struct addrinfo hints, *servinfo;
++        memset(&hints, 0, sizeof hints);
++        hints.ai_family = AF_INET;
++        while ((ret = getaddrinfo(optarg, NULL, &hints, &servinfo)) != 0) {
++                int sec = 5;
++                fprintf(stderr, "Unable to resolve %s. Retrying in %d sec\n",
++                            optarg, sec);
++                sleep(sec);
++        }
++        struct sockaddr_in *h = (struct sockaddr_in *) servinfo->ai_addr;
++        memcpy(addr, &h->sin_addr, sizeof(struct in_addr));
++        freeaddrinfo(servinfo);
+ }
+ 
+ /**
 diff --git a/interface/interface.c b/interface/interface.c
 index 96a612e..3d9c91d 100644
 --- a/interface/interface.c
