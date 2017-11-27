@@ -47,23 +47,26 @@ def send_pkts(args, rewriteinfo):
         p.getlayer(Ether).src = ethsrc
         p.getlayer(Ether).dst = ethdst
 
-        # Update IP for s11 and s1u
-        if proto in ['s11', 's1u']:
-            del p[IP].chksum
-            del p[UDP].chksum
+        del p[IP].chksum
+        del p[UDP].chksum
 
-            p.getlayer(IP).src = ipsrc
+        p.getlayer(IP).src = ipsrc
+        if proto != 'sgi':
             p.getlayer(IP).dst = ipdst
-            if proto == 's11':
-                # Update s11 MME GTPC IP for Create Session
-                if p.getlayer(UDP).gtp_type == 32:
-                    p.getlayer(UDP).IE_list[8].ipv4 = ipsrc
-                # Update s11 MME GTPC IP and s1u ENB GTPU IP for Modify Bearer
-                if p.getlayer(UDP).gtp_type == 34:
-                    p.getlayer(UDP).IE_list[0][2].ipv4 = args.s1u.addr
-                    p.getlayer(UDP).IE_list[1].ipv4 = ipsrc
+        if proto == 's11':
+            # Update s11 MME GTPC IP for Create Session
+            if p.getlayer(UDP).gtp_type == 32:
+                p.getlayer(UDP).IE_list[8].ipv4 = ipsrc
+            # Update s11 MME GTPC IP and s1u ENB GTPU IP for Modify Bearer
+            if p.getlayer(UDP).gtp_type == 34:
+                p.getlayer(UDP).IE_list[0][2].ipv4 = args.s1u.addr
+                p.getlayer(UDP).IE_list[1].ipv4 = ipsrc
+        elif proto == 's1u':
+            del p.getlayer(UDP)['GTP_U_Header']['IP'].chksum
+            del p.getlayer(UDP)['GTP_U_Header']['UDP'].chksum
+            p.getlayer(UDP)['GTP_U_Header']['IP'].dst=args.sgi.addr
 
-            checksum_silent(p)
+        checksum_silent(p)
 
     wrpcap('tosend-{}.pcap'.format(proto), pkts)
 

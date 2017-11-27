@@ -61,7 +61,7 @@ Then enter the Traffic container with:
 
 `docker exec -it epc_traffic_1 /bin/bash`
 
-We need to rewrite the pre-recorded traffic to have the correct IP addresses. This will generate 3 modified pcap files.
+We need to rewrite the pre-recorded traffic to have the correct IP addresses. This will generate 3 modified pcap files. (This will take several seconds.)
 
 `./rewrite_pcaps.py spgw.s11.ngic spgw.s1u.ngic spgw.sgi.ngic`
 
