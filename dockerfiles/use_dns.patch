@@ -34,6 +34,59 @@ index 5f2539c..fc98a98 100644
  }
  
  /**
+diff --git a/dp/config.c b/dp/config.c
+index 919daa8..91411d0 100644
+--- a/dp/config.c
++++ b/dp/config.c
+@@ -23,10 +23,32 @@
+ 
+ #include "main.h"
+ #include "pipeline/epc_packet_framework.h"
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <netdb.h>
++#include <unistd.h>
+ 
+ /* app config structure */
+ struct app_params app;
+ 
++static void
++parse_arg_ip(const char *optarg, struct in_addr *addr)
++{
++        int ret;
++        struct addrinfo hints, *servinfo;
++        memset(&hints, 0, sizeof hints);
++        hints.ai_family = AF_INET;
++        while ((ret = getaddrinfo(optarg, NULL, &hints, &servinfo)) != 0) {
++                int sec = 5;
++                fprintf(stderr, "Unable to resolve %s. Retrying in %d sec\n",
++                            optarg, sec);
++                sleep(sec);
++        }
++        struct sockaddr_in *h = (struct sockaddr_in *) servinfo->ai_addr;
++        memcpy(addr, &h->sin_addr, sizeof(struct in_addr));
++        freeaddrinfo(servinfo);
++ }
++
+ /* prints the usage statement and quits with an error message */
+ static inline void dp_print_usage(void)
+ {
+@@ -321,13 +343,8 @@ parse_config_args(struct app_params *app, int argc, char **argv)
+ 			break;
+ 			/* sgi_gw_ip address */
+ 		case 'x':
+-			if (!inet_aton(optarg, (struct in_addr *)&app->sgi_gw_ip)) {
+-				printf("Invalid sgi gateway ip ->%s<-\n",
+-						optarg);
+-				dp_print_usage();
+-				app->sgi_gw_ip = 0;
+-				return -1;
+-			}
++
++			parse_arg_ip(optarg, (struct in_addr *)&app->sgi_gw_ip);
+ 			printf("Parsed sgi gw ip: %s\n",
+ 					inet_ntoa(*((struct in_addr *)&app->sgi_gw_ip)));
+ 			break;
 diff --git a/interface/interface.c b/interface/interface.c
 index 96a612e..3d9c91d 100644
 --- a/interface/interface.c
