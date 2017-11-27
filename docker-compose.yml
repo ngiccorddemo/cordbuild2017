@@ -16,6 +16,7 @@ services:
     volumes:
     - ./config:/opt/ngic/config
     networks:
+      s1u_net: # adding just for resolving spgw.s1u.ngic
       s11_net:
         aliases:
         - spgw.s11.ngic
@@ -73,31 +74,15 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "s11_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 1.1.1.0/24
   s1u_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "s1u_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 2.2.2.0/24
   sgi_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "sgi_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 3.3.3.0/24
   cpdp_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "cpdp_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 4.4.4.0/24

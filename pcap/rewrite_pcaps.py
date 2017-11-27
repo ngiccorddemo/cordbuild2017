@@ -65,7 +65,7 @@ def send_pkts(args, rewriteinfo):
 
             checksum_silent(p)
 
-    wrpcap('tosend-{}-{}-out.pcap'.format(proto, iface), pkts)
+    wrpcap('tosend-{}.pcap'.format(proto), pkts)
 
 
 def main(args, proto, host):
