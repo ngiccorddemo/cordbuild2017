@@ -24,6 +24,6 @@ Now you can use the docker-compose to build the container images:
 
 `docker-compose build`
 
-**Note:** If you are behind a proxy, append `--build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy`
+**Note:** If you are behind a proxy, instead use ` docker-compose build --build-arg http_proxy=$http_proxy --build-arg https_proxy=$https_proxy builder cp dp traffic`
 
 Once all of the images have built, go back and follow the instructions on the main readme starting at [Starting the Data Plane](https://github.com/ngiccorddemo/cordbuild2017#starting-the-data-plane)
