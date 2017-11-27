@@ -46,25 +46,22 @@ def send_pkts(args, rewriteinfo):
         # Update Ether common for all proto
         p.getlayer(Ether).src = ethsrc
         p.getlayer(Ether).dst = ethdst
+        if proto == 'sgi':
+            continue
 
         del p[IP].chksum
         del p[UDP].chksum
 
         p.getlayer(IP).src = ipsrc
-        if proto != 'sgi':
-            p.getlayer(IP).dst = ipdst
+        p.getlayer(IP).dst = ipdst
         if proto == 's11':
             # Update s11 MME GTPC IP for Create Session
             if p.getlayer(UDP).gtp_type == 32:
                 p.getlayer(UDP).IE_list[8].ipv4 = ipsrc
             # Update s11 MME GTPC IP and s1u ENB GTPU IP for Modify Bearer
             if p.getlayer(UDP).gtp_type == 34:
-                p.getlayer(UDP).IE_list[0][2].ipv4 = args.s1u.addr
+                p.getlayer(UDP).IE_list[0][2].ipv4 = args.enb.addr
                 p.getlayer(UDP).IE_list[1].ipv4 = ipsrc
-        elif proto == 's1u':
-            del p.getlayer(UDP)['GTP_U_Header']['IP'].chksum
-            del p.getlayer(UDP)['GTP_U_Header']['UDP'].chksum
-            p.getlayer(UDP)['GTP_U_Header']['IP'].dst=args.sgi.addr
 
         checksum_silent(p)
 
@@ -96,12 +93,13 @@ if __name__ == "__main__":
 
     # Args handling
     parser = argparse.ArgumentParser(epilog="Ex: ./rewrite_pcaps.py \
-                      spgw.s11.ngic spgw.s1u.ngic spgw.sgi.ngic")
+          enb.s1u.ngic spgw.s11.ngic spgw.s1u.ngic spgw.sgi.ngic ")
+    parser.add_argument("enb", type=host, help="sgi target IP or name")
     parser.add_argument("s11", type=host, help="s11 target IP or name")
     parser.add_argument("s1u", type=host, help="s1u target IP or name")
     parser.add_argument("sgi", type=host, help="sgi target IP or name")
     args = parser.parse_args()
 
-    for arg in vars(args):
+    for arg in ['s11', 's1u', 'sgi']:
         print arg
         main(args, arg, getattr(args, arg))

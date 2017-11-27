@@ -63,7 +63,7 @@ Then enter the Traffic container with:
 
 We need to rewrite the pre-recorded traffic to have the correct IP addresses. This will generate 3 modified pcap files. (This will take several seconds.)
 
-`./rewrite_pcaps.py spgw.s11.ngic spgw.s1u.ngic spgw.sgi.ngic`
+`./rewrite_pcaps.py enb.s1u.ngic spgw.s11.ngic spgw.s1u.ngic spgw.sgi.ngic`
 
 
 Now that the address fields are updated, it's time to start the traffic.
