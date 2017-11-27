@@ -29,18 +29,11 @@ Use Docker-Compose to pull the images:
 
 (Alternatively, if you wish to build the Docker images yourself, see the [readme](dockerfiles/README.md) inside the dockerfiles folder.)
 
-Starting the Traffic Container
-==============================
-
-In terminal #1: Bring up Traffic container in daemon mode (-d) with:
-
-`docker-compose -p epc up -d traffic`
-
 
 Starting the Data Plane
 =======================
 
-In terminal #2: Bring up DP
+In terminal #1: Bring up DP
 
 `docker-compose -p epc up dp`
 
@@ -50,17 +43,21 @@ Wait until you see messages about `Unable to resolve cp.cpdp.ngic.`, which means
 Starting the Control Plane
 ==========================
 
-In terminal #3: Bring up CP after DP is ready
+In terminal #2: Bring up CP after DP is ready
 
 `docker-compose -p epc up cp`
 
-You will see a large table of stats printing periodically.
+Wait until you see messages about `Unable to resolve mme.s11.ngic.`, which means that it is waiting for the traffic container.
 
 
 Starting the Traffic 
 ====================
 
-Back in terminal #1, enter the Traffic container with:
+In terminal #3: Bring up Traffic container in daemon mode (-d) with:
+
+`docker-compose -p epc up -d traffic`
+
+Then enter the Traffic container with:
 
 `docker exec -it epc_traffic_1 /bin/bash`
 
