@@ -23,6 +23,5 @@ VOLUME /opt/ngic/config
 
 WORKDIR /opt/ngic/bin
 
-# Step setting MAC addr is only required the demo
 CMD . /opt/ngic/config/cp_config.cfg && ifconfig -a && \
     ./ngic_controlplane $EAL_ARGS -- $APP_ARGS

@@ -37,7 +37,7 @@ In terminal #1: Bring up DP
 
 `docker-compose -p epc up dp`
 
-Wait until you see messages about `Unable to resolve cp.cpdp.ngic.`, which means that it is waiting for the control plane.
+Wait until you see messages about `Unable to resolve ...`, which means that it is waiting for the control plane.
 
 
 Starting the Control Plane

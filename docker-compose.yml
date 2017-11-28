@@ -23,6 +23,8 @@ services:
       cpdp_net:
         aliases:
         - cp.cpdp.ngic
+    stdin_open: true
+    tty: true
 
   dp:
     build:
@@ -46,6 +48,8 @@ services:
       cpdp_net:
         aliases:
         - dp.cpdp.ngic
+    stdin_open: true
+    tty: true
 
   traffic:
     build:
