@@ -13,15 +13,16 @@ services:
       args:
       - tag=$tag
     image: ngiccorddemo/ngic-cp:$tag
-    cap_add:
-    - NET_ADMIN    
     volumes:
     - ./config:/opt/ngic/config
     networks:
+      s1u_net: # adding just for resolving spgw.s1u.ngic
       s11_net:
-        ipv4_address: 10.1.10.41
+        aliases:
+        - spgw.s11.ngic
       cpdp_net:
-        ipv4_address: 172.26.0.2 
+        aliases:
+        - cp.cpdp.ngic
 
   dp:
     build:
@@ -37,11 +38,14 @@ services:
     - ./config:/opt/ngic/config
     networks:
       s1u_net:
-        ipv4_address: 11.1.1.100
+        aliases:
+        - spgw.s1u.ngic
       sgi_net:
-        ipv4_address: 13.1.1.93
+        aliases:
+        - spgw.sgi.ngic
       cpdp_net:
-        ipv4_address: 172.26.0.3
+        aliases:
+        - dp.cpdp.ngic
 
   traffic:
     build:
@@ -52,18 +56,16 @@ services:
     - NET_ADMIN
     volumes:
     - ./pcap:/opt/ngic/pcap
-    environment:
-    - S1U_MAC=68:05:CA:30:E5:B8
-    - S1U_IP=11.1.1.101
-    - SGI_MAC=68:05:CA:30:E5:B9
-    - SGI_IP=13.1.1.94
     networks:
       s11_net:
-        ipv4_address: 10.1.10.11
+        aliases:
+        - mme.s11.ngic
       s1u_net:
-        ipv4_address: 11.1.1.101
+        aliases:
+        - enb.s1u.ngic
       sgi_net:
-        ipv4_address: 13.1.1.94
+        aliases:
+        - app.sgi.ngic
     stdin_open: true
     tty: true
 
@@ -72,31 +74,15 @@ networks:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "s11_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 10.1.10.0/24
   s1u_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "s1u_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 11.1.1.0/24
   sgi_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "sgi_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 13.1.1.0/24                
   cpdp_net:
     driver: bridge
     driver_opts:
       com.docker.network.bridge.name: "cpdp_net"
-    ipam:
-      driver: default
-      config:
-        - subnet: 172.26.0.0/24

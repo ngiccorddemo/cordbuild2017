@@ -8,12 +8,11 @@ Copy the Dockerfiles from demo repo to ngic directory:
 
 `cp dockerfiles/Docker* ngic/`
 
-For this demo, we are using replayed traffic, so we must apply a patch to enable static ARP tables.  
-**Note: If you are planning to run this with a traffic generator you supply, skip this step.**
+To move away from hardcoded IP address configs and test DNS apply the below patch
 
 ```shell
-cp dockerfiles/static_arp.patch ngic/
-git -C ngic apply static_arp.patch
+cp dockerfiles/use_dns.patch ngic/
+git -C ngic apply use_dns.patch
 ```
 
 Also for this demo, we are disabling the SDN Controller support.
