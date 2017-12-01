@@ -7,6 +7,8 @@ WORKDIR ${NG_CORE}
 
 RUN make clean && make -j4 build-cp
 
+FROM consul:1.0.0 as consul
+
 FROM ubuntu:16.04
 RUN apt-get update && apt-get -y install \
     libpcap0.8-dev libcurl4-openssl-dev \
@@ -14,6 +16,7 @@ RUN apt-get update && apt-get -y install \
     iputils-ping iproute2
 RUN apt-get -y install tcpdump net-tools traceroute mtr dnsutils bind9-host hostname ethtool netcat
 COPY --from=cp-builder /opt/ng-core/cp/build/ngic_controlplane /opt/ngic/bin/ngic_controlplane
+COPY --from=consul /bin/consul /bin/consul
 
 # 2123 GTP-Control
 EXPOSE 2123/UDP
